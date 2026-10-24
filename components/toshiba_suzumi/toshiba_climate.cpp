@@ -259,6 +259,16 @@ void ToshibaClimateUart::parseResponse(std::vector<uint8_t> rawData) {
   ToshibaCommandType sensor;
   uint8_t value;
 
+  // Observed model-information reply: 0xE0 at offset 12, two 50-byte
+  // identification blocks, followed by the checksum. Other replies retain
+  // the existing warning until their layout is known.
+  if (rawData.size() == 114 && rawData[12] == 0xE0) {
+    const std::string indoor_model(rawData.begin() + 13, rawData.begin() + 33);
+    const std::string outdoor_model(rawData.begin() + 63, rawData.begin() + 83);
+    ESP_LOGD(TAG, "Unit model information: indoor=%s, outdoor=%s", indoor_model.c_str(), outdoor_model.c_str());
+    return;
+  }
+
   switch (length) {
     case 15:  // response to requestData with the actual value of sensor/setting
       sensor = static_cast<ToshibaCommandType>(rawData[12]);
