@@ -1,0 +1,163 @@
+#pragma once
+
+#include "esphome/core/component.h"
+#include "esphome/components/binary_sensor/binary_sensor.h"
+#include "esphome/components/climate/climate.h"
+#include "esphome/components/uart/uart.h"
+#include "esphome/components/sensor/sensor.h"
+#include "esphome/components/select/select.h"
+#include "toshiba_climate_mode.h"
+
+namespace esphome {
+namespace time {
+class RealTimeClock;
+}  // namespace time
+namespace toshiba_suzumi {
+
+static const char *const TAG = "ToshibaClimateUart";
+// default max temp for units
+static const uint8_t MAX_TEMP = 30;
+// default min temp for units without 8° heating mode
+static const uint8_t MIN_TEMP_STANDARD = 17;
+static const uint8_t SPECIAL_TEMP_OFFSET = 16;
+static const uint8_t SPECIAL_MODE_EIGHT_DEG_MIN_TEMP = 5;
+static const uint8_t SPECIAL_MODE_EIGHT_DEG_MAX_TEMP = 13;
+static const uint8_t SPECIAL_MODE_EIGHT_DEG_DEF_TEMP = 8;
+static const uint8_t NORMAL_MODE_DEF_TEMP = 20;
+
+static const std::vector<uint8_t> HANDSHAKE[6] = {
+    {2, 255, 255, 0, 0, 0, 0, 2},       {2, 255, 255, 1, 0, 0, 1, 2, 254}, {2, 0, 0, 0, 0, 0, 2, 2, 2, 250},
+    {2, 0, 1, 129, 1, 0, 2, 0, 0, 123}, {2, 0, 1, 2, 0, 0, 2, 0, 0, 254},  {2, 0, 2, 0, 0, 0, 0, 254},
+};
+
+static const std::vector<uint8_t> AFTER_HANDSHAKE[2] = {
+    {2, 0, 2, 1, 0, 0, 2, 0, 0, 251},
+    {2, 0, 2, 2, 0, 0, 2, 0, 0, 250},
+};
+
+struct ToshibaCommand {
+  ToshibaCommandType cmd;
+  std::vector<uint8_t> payload;
+  int delay;
+};
+
+class ToshibaClimateUart : public PollingComponent, public climate::Climate, public uart::UARTDevice {
+ public:
+  ToshibaClimateUart();
+
+  void setup() override;
+  void loop() override;
+  void dump_config() override;
+  void update() override;
+  void scan();
+  void set_wifi_led(bool enabled);
+  float get_setup_priority() const override { return setup_priority::LATE; }
+
+  void set_indoor_temp_sensor(sensor::Sensor *indoor_temp_sensor) { indoor_temp_sensor_ = indoor_temp_sensor; }
+  void set_outdoor_temp_sensor(sensor::Sensor *outdoor_temp_sensor) { outdoor_temp_sensor_ = outdoor_temp_sensor; }
+  void set_cdu_td_temp_sensor(sensor::Sensor *sensor) { cdu_td_temp_sensor_ = sensor; }
+  void set_cdu_ts_temp_sensor(sensor::Sensor *sensor) { cdu_ts_temp_sensor_ = sensor; }
+  void set_cdu_te_temp_sensor(sensor::Sensor *sensor) { cdu_te_temp_sensor_ = sensor; }
+  void set_cdu_load_sensor(sensor::Sensor *sensor) { cdu_load_sensor_ = sensor; }
+  void set_cdu_iac_sensor(sensor::Sensor *sensor) { cdu_iac_sensor_ = sensor; }
+  void set_fcu_tc_temp_sensor(sensor::Sensor *sensor) { fcu_tc_temp_sensor_ = sensor; }
+  void set_fcu_tcj_temp_sensor(sensor::Sensor *sensor) { fcu_tcj_temp_sensor_ = sensor; }
+  void set_fcu_fan_rpm_sensor(sensor::Sensor *sensor) { fcu_fan_rpm_sensor_ = sensor; }
+  void set_time(time::RealTimeClock *time) { time_ = time; }
+  void set_energy_sensor(sensor::Sensor *sensor) { energy_sensor_ = sensor; }
+  void set_power_sensor(sensor::Sensor *sensor) { power_sensor_ = sensor; }
+  void set_pwr_select(select::Select *pws_select) { pwr_select_ = pws_select; }
+  void set_vertical_air_direction_select(select::Select *vertical_air_direction_select) {
+    vertical_air_direction_select_ = vertical_air_direction_select;
+  }
+  void set_self_clean_sensor(binary_sensor::BinarySensor *self_clean_sensor) { self_clean_sensor_ = self_clean_sensor; }
+  void set_horizontal_swing(bool enabled) { horizontal_swing_ = enabled; }
+  void disable_heat_mode(bool disabled) { heat_mode_disabled_ = disabled; }
+  void disable_wifi_led(bool disabled) { wifi_led_disabled_ = disabled; }
+  void set_supported_presets(const std::vector<const char *> &presets) { supported_presets_ = presets; }
+  void set_min_temp(uint8_t min_temp) { min_temp_ = min_temp; }
+  void set_time_sync_interval(uint32_t interval) { time_sync_interval_ = interval; }
+
+ protected:
+  /// Override control to change settings of the climate device.
+  void control(const climate::ClimateCall &call) override;
+
+  /// Return the traits of this controller.
+  climate::ClimateTraits traits() override;
+
+ private:
+  std::vector<uint8_t> rx_message_;
+  std::vector<ToshibaCommand> command_queue_;
+  uint32_t last_command_timestamp_ = 0;
+  uint32_t last_rx_char_timestamp_ = 0;
+  STATE power_state_ = STATE::OFF;
+  // True while the unit is running its post-shutdown self-cleaning cycle.
+  bool self_clean_running_ = false;
+  optional<SPECIAL_MODE> special_mode_ = SPECIAL_MODE::STANDARD;
+  select::Select *pwr_select_ = nullptr;
+  select::Select *vertical_air_direction_select_ = nullptr;
+  binary_sensor::BinarySensor *self_clean_sensor_ = nullptr;
+  sensor::Sensor *indoor_temp_sensor_ = nullptr;
+  sensor::Sensor *outdoor_temp_sensor_ = nullptr;
+  sensor::Sensor *cdu_td_temp_sensor_ = nullptr;
+  sensor::Sensor *cdu_ts_temp_sensor_ = nullptr;
+  sensor::Sensor *cdu_te_temp_sensor_ = nullptr;
+  sensor::Sensor *cdu_load_sensor_ = nullptr;
+  sensor::Sensor *cdu_iac_sensor_ = nullptr;
+  sensor::Sensor *fcu_tc_temp_sensor_ = nullptr;
+  sensor::Sensor *fcu_tcj_temp_sensor_ = nullptr;
+  sensor::Sensor *fcu_fan_rpm_sensor_ = nullptr;
+  time::RealTimeClock *time_ = nullptr;
+  sensor::Sensor *energy_sensor_ = nullptr;
+  sensor::Sensor *power_sensor_ = nullptr;
+  bool horizontal_swing_ = false;
+  uint8_t min_temp_ = 17; // default min temp for units without 8° heating mode
+  bool heat_mode_disabled_ = false;
+  bool wifi_led_disabled_ = false;
+  std::vector<const char*> supported_presets_;
+  uint32_t last_time_sync_ = 0;
+  uint32_t last_energy_sync_ = 0;
+  uint32_t last_total_daily_energy_ = 0;
+  uint32_t last_energy_update_ms_ = 0;
+  uint16_t daily_energy_usage_[24] = {0};
+  bool time_synced_ = false;
+  uint32_t time_sync_interval_{86400000};
+
+  void enqueue_command_(const ToshibaCommand &command);
+  void send_to_uart(const ToshibaCommand command);
+  void start_handshake();
+  void parseResponse(std::vector<uint8_t> rawData);
+  void requestData(ToshibaCommandType cmd);
+  void process_command_queue_();
+  void sendCmd(ToshibaCommandType cmd, uint8_t value);
+  void getInitData();
+  void handle_rx_byte_(uint8_t c);
+  bool validate_message_();
+  void set_self_clean_running_(bool running);
+  void on_set_pwr_level(const std::string &value);
+  void on_set_vertical_air_direction(const std::string &value);
+  void publish_vertical_air_direction_(SWING swing_mode);
+  void configure_supported_custom_modes_();
+#ifdef USE_TIME
+  void check_time_sync_(uint32_t now);
+  void sync_time_();
+#endif
+  void sync_energy_();
+  void estimate_wattage_(uint32_t current_energy);
+
+  friend class ToshibaPwrModeSelect;
+  friend class ToshibaVerticalAirDirectionSelect;
+};
+
+class ToshibaPwrModeSelect : public select::Select, public esphome::Parented<ToshibaClimateUart> {
+ protected:
+  virtual void control(const std::string &value) override;
+};
+
+class ToshibaVerticalAirDirectionSelect : public select::Select, public esphome::Parented<ToshibaClimateUart> {
+ protected:
+  virtual void control(const std::string &value) override;
+};
+
+}  // namespace toshiba_suzumi
+}  // namespace esphome
