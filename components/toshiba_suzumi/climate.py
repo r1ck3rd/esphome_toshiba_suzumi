@@ -18,7 +18,6 @@ from esphome.const import (
     STATE_CLASS_TOTAL_INCREASING,
     __version__ as ESPHOME_VERSION
 )
-from packaging import version
 import logging
 
 _LOGGER = logging.getLogger(__name__)
