@@ -1,44 +1,46 @@
 esphome:
-  name: "climate-living-room"
+  name: "airco"
 
 esp32:
-  board: nodemcu-32s
+  board: esp32dev
   framework:
-    type: arduino
-
+    type: esp-idf
+    advanced:
+      sram1_as_iram: true
+      minimum_chip_revision: "3.1"
+      flash_chip: generic
 external_components:
-  - source: 
+  - source:
       type: git
-      url: https://github.com/pedobry/esphome_toshiba_suzumi
+      url: https://github.com/r1ck3rd/esphome_toshiba_suzumi
+      ref: main
+      path: .
     components: [toshiba_suzumi]
+    refresh: always
 
 logger:
   level: info
 
 uart:
   id: uart_bus
-  tx_pin: 33
-  rx_pin: 32
+  tx_pin: GPIO25
+  rx_pin: GPIO26
   parity: EVEN
   baud_rate: 9600
 
 climate:
   - platform: toshiba_suzumi
-    name: living-room
-    id: living_room
+    name: airco-overloop
+    id: airco_overloop
     uart_id: uart_bus
-    #indoor_temp:        # Optional. Indoor temperature sensor
-    #  name: Indoor Temp
     outdoor_temp:        # Optional. Outdoor temperature sensor
       name: Outdoor Temp
-    power_select:
-      name: "Power level"
-    #vertical_air_direction: # Optional. Fixed vertical air direction.
-      # Controls the Toshiba horizontal louver, which directs air up/down.
-      #name: "Vertical air direction"
-    #self_clean:              # Optional. Reports the post-shutdown self-cleaning cycle.
-      #name: "Self Clean"
-    #horizontal_swing: true # Optional. Uncomment if your HVAC supports also horizontal swing
+      filters:
+        # Filter out value 127 as that's what unit sends when it can's measure the outside temp.
+        - filter_out: 127 
+    #power_select:
+      #name: "Power level"
+    horizontal_swing: true # Optional. Uncomment if your HVAC supports also horizontal swing
     #supported_presets:          # Optional. Enable only the features your HVAC
       #- "Standard"
       #- "Hi POWER"
@@ -52,18 +54,33 @@ climate:
       #- "Floor"
       #- "Comfort"
     #disable_wifi_led: true # Optional. Disable Wifi LED on internal unit.
-
+    cdu_load:                    # Optional. Compressor load (%) - useful for estimating power consumption
+      name: "Compressor Load"
+    cdu_iac:                     # Optional. Compressor current
+      name: "Compressor Current"
+    cdu_td_temp:                 # Optional. CDU discharge pipe temperature
+      name: "CDU Discharge Temp"
+    cdu_ts_temp:                 # Optional. CDU suction pipe temperature
+      name: "CDU Suction Temp"
+    cdu_te_temp:                 # Optional. CDU evaporator temperature
+      name: "CDU Evaporator Temp"
+    fcu_tc_temp:                 # Optional. FCU heat exchanger temperature
+      name: "FCU Heat Exchanger Temp"
+    fcu_tcj_temp:                # Optional. FCU heat exchanger junction temperature
+      name: "FCU Junction Temp"
+    fcu_fan_rpm:                 # Optional. FCU fan speed (RPM)
+      name: "FCU Fan RPM"
 # Enable button to scan for unknown values in AC unit. This is optional.
-button:
-  - platform: template
-    name: "Scan for unknown sensors"
-    icon: "mdi:reload"
-    on_press:
-      then:
+#button:
+  #- platform: template
+    #name: "Scan for unknown sensors"
+    #icon: "mdi:reload"
+    #on_press:
+      #then:
          # id(living_room) is the id of the climate component above
-        - lambda: |-
-            auto* controller = static_cast<toshiba_suzumi::ToshibaClimateUart*>(id(living_room));
-            controller->scan();
+        #- lambda: |-
+            #auto* controller = static_cast<toshiba_suzumi::ToshibaClimateUart*>(id(airco_woonkamer));
+            #controller->scan();
 
 # Enable Home Assistant API
 api:
@@ -71,7 +88,8 @@ api:
     key: !secret ha_enc_key
 
 ota:
-  password: !secret ota_password
+  - platform: esphome
+    encryption:
 
 wifi:
   ssid: !secret wifi_ssid
@@ -79,5 +97,5 @@ wifi:
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
-    ssid: "A Fallback Hotspot"
-    password: "xxxxxxxxxxx"
+    ssid: "airco"
+    password: "123456789"
