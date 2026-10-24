@@ -1,43 +1,22 @@
-***
-Sep 10th 2025
+...
+# Changelog — ESPHome Toshiba Suzumi
+Date: 25 October 2026
 
-* implement Special modes as Climate presets instead of HA selector. Due to backward compatibility, the list of special modes can be either as new "supported_presets" YAML option, or the old "supported_modes" option. I recommend to migrate to the new config schema as the old one will be removed in the future.
+### Fixed
+- Removed the unused `packaging` import so the component loads without this Python package.
+- Corrected boolean handling: `horizontal_swing`, `disable_heat_mode`, and `disable_wifi_led` now respect `false`.
+- Fixed string comparisons for custom fan speeds.
+- Added recognition of the 114-byte model information response. Model names are logged at debug level instead of triggering an unknown-message warning.
 
-***
-Jun 23rd 2025
+### Configuration
+- Updated the external component source to `r1ck3rd/esphome_toshiba_suzumi`.
+- Added `path: .` to match the current repository structure.
+- Updated example configurations to the current OTA and ESP8266 syntax.
+- Recommended adding `flash_chip: generic` to reduce IRAM usage.
 
-* updated schema definition to support ESPHome 2025.5+. 
-
-***
-May 18th 2025
-
-* added support for FrostGuard (8 degree) mode
-* removed deprecated conf functions (fix for ESPHome 2025.11.0)
-* replace CUSTOM_FAN_1, CUSTOM_FAN_3, CUSTOM_FAN_3 with regular fan modes FAN_LOW, FAN_MEDIUM and FAN_HIGH
-* added special modes "Sleep", "Floor" and "Comfort"
-
-Oct 7th 2024
-
-* add configuration option to disable WiFi LED on AC unit
-
-April 4th, 2023
-
-* fixed fan Quiet mode for ESPHome 2023.3.0
-* Note:
-    - users with ESPHome 2023.3.0+ should use branch master
-        url: https://github.com/pedobry/esphome_toshiba_suzumi
-    - users with ESPHome 2023.2.x and older should use this url:
-        url: https://github.com/pedobry/esphome_toshiba_suzumi@2023.2.0
-
-APRIL 1st, 2023
-
-* updated examples to filter outside temp value 127
-* added an optional button to scan for unsupported sensors
-* tested on ESP8266 - Lolin D1 mini
-
-
-ORIGINAL RELEASE (Dec 2022)
-
-* initial release
-
-***
+### Verified
+- Successfully compiled the component for ESP8266 with ESPHome 2026.10.0, with and without time synchronization.
+- Validated both updated examples and generated their C++ source.
+- Confirmed that the `airco-overloop` ESP32 runs ESPHome 2026.10.0 and is accessible through the API.
+- Communication with and control of the air conditioner still require hardware verification.
+...
