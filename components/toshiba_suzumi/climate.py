@@ -217,16 +217,16 @@ async def to_code(config):
         cg.add(var.set_self_clean_sensor(sens))
 
     if FEATURE_HORIZONTAL_SWING in config:
-        cg.add(var.set_horizontal_swing(True))
+        cg.add(var.set_horizontal_swing(config[FEATURE_HORIZONTAL_SWING]))
 
     if MIN_TEMP in config:
         cg.add(var.set_min_temp(config[MIN_TEMP]))
 
     if DISABLE_HEAT_MODE in config:
-        cg.add(var.disable_heat_mode(True))
+        cg.add(var.disable_heat_mode(config[DISABLE_HEAT_MODE]))
 
     if DISABLE_WIFI_LED in config:
-        cg.add(var.disable_wifi_led(True))
+        cg.add(var.disable_wifi_led(config[DISABLE_WIFI_LED]))
 
     if CONF_SUPPORTED_PRESETS in config:
         presets = config[CONF_SUPPORTED_PRESETS]
