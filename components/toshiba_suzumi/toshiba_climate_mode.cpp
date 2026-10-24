@@ -48,9 +48,9 @@ const climate::ClimateMode IntToClimateMode(MODE mode) {
  * @return The Toshiba fan mode code
  */
 const optional<FAN> StringToFanLevel(const char* mode) {
-  if (mode == CUSTOM_FAN_LEVEL_2) {
+  if (str_equals_case_insensitive(mode, CUSTOM_FAN_LEVEL_2)) {
     return FAN::FANMODE_2;
-  } else if (mode == CUSTOM_FAN_LEVEL_4) {
+  } else if (str_equals_case_insensitive(mode, CUSTOM_FAN_LEVEL_4)) {
     return FAN::FANMODE_4;
   } else {
     return nullopt;
