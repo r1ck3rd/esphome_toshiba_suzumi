@@ -6,8 +6,6 @@ Toshiba air conditioner has an option for connecting remote module purchased sep
 
 This component use ESPHome UART to connect with Toshiba AC and communicates directly with Home Assistant.
 
-<a href="https://www.buymeacoffee.com/pedobryk" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
-
 ## ESPHome versions
 Current main branch supports latest ESPHome **2026.1**. There have been some internal changes in climate entity in ESPHome which makes it incompatible with previous ESPHome versions.
 
