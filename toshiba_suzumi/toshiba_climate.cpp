@@ -1,5 +1,6 @@
 #include "toshiba_climate.h"
 #include "toshiba_climate_mode.h"
+#include "esphome/core/alloc_helpers.h"
 #include "esphome/core/log.h"
 #ifdef USE_TIME
 #include "esphome/components/time/real_time_clock.h"
